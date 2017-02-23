@@ -1,5 +1,7 @@
 package com.excellence.mailsenderlibrary.utils;
 
+import android.os.Looper;
+
 import java.io.File;
 import java.util.Date;
 import java.util.Properties;
@@ -24,9 +26,9 @@ import com.excellence.mailsenderlibrary.bean.MailSenderInfo;
 
 /**
  * 需要权限
- * 网络 {@link android.Manifest.permission.INTERNET}
- * 文件 {@link android.Manifest.permission.READ_EXTERNAL_STORAGE}
- *	   {@link android.Manifest.permission.WRITE_EXTERNAL_STORAGE}
+ * {@link android.Manifest.permission.INTERNET}
+ * {@link android.Manifest.permission.READ_EXTERNAL_STORAGE}
+ * {@link android.Manifest.permission.WRITE_EXTERNAL_STORAGE}
  *
  */
 public class MailSender
@@ -130,6 +132,7 @@ public class MailSender
 
 	public synchronized boolean send() throws Exception
 	{
+		throwIfOnMainThread();
 		Properties properties = setProperties();
 		UserAuthenticator userAuth = null;
 		if (!mailSenderInfo.getUserName().isEmpty() && !mailSenderInfo.getPassword().isEmpty() && mailSenderInfo.getToAddress().length > 0 && !mailSenderInfo.getFromAddress().isEmpty()
@@ -169,6 +172,12 @@ public class MailSender
 			return false;
 	}
 
+	private void throwIfOnMainThread()
+	{
+		if (Looper.getMainLooper() == Looper.myLooper())
+			throw new IllegalStateException("MailSender must be not invoked from the main thread.");
+	}
+
 	public void addAttachment(String path, String fileName) throws Exception
 	{
 		BodyPart messageBodyPart = new MimeBodyPart();
@@ -176,7 +185,6 @@ public class MailSender
 		FileDataSource source = new FileDataSource(file);
 		messageBodyPart.setDataHandler(new DataHandler(source));
 		messageBodyPart.setFileName(fileName);
-
 		mailSenderInfo.getMultipart().addBodyPart(messageBodyPart);
 	}
 
